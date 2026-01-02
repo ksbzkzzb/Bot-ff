@@ -1,0 +1,21 @@
+{
+  "name": "freefire-panel",
+  "version": "2.0.0",
+  "description": "FreeFire Bot Control Panel with Activation System",
+  "scripts": {
+    "start": "python app.py",
+    "install-deps": "pip install -r requirements.txt",
+    "setup": "python -c \"from app import init_database; init_database()\"",
+    "dev": "flask run --host=0.0.0.0 --port=5000"
+  },
+  "keywords": [
+    "freefire",
+    "bot",
+    "panel",
+    "dashboard",
+    "activation"
+  ],
+  "author": "Developer",
+  "license": "MIT",
+  "dependencies": {}
+}
