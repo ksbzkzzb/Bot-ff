@@ -1,0 +1,255 @@
+{% extends "base.html" %}
+
+{% block title %}لوحة المطور - FreeFire Panel{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-0"><i class="bi bi-terminal"></i> لوحة المطور</h1>
+                    <p class="text-muted">مرحباً {{ current_user.username }}! هذه لوحة التحكم الخاصة بالمطورين</p>
+                </div>
+                <span class="badge bg-warning fs-6">🔓 وضع المطور</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- إحصائيات سريعة -->
+    <div class="row">
+        <div class="col-md-3">
+            <div class="card border-primary">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="text-muted">إجمالي المستخدمين</h6>
+                            <h3 class="mb-0">{{ stats.total_users }}</h3>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="bi bi-people fs-1 text-primary"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card border-success">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="text-muted">إجمالي التفعيلات</h6>
+                            <h3 class="mb-0">{{ stats.total_activations }}</h3>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="bi bi-check-circle fs-1 text-success"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card border-warning">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="text-muted">الكودات النشطة</h6>
+                            <h3 class="mb-0">{{ stats.active_codes }}</h3>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="bi bi-key fs-1 text-warning"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card border-info">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="text-muted">إجمالي البوتات</h6>
+                            <h3 class="mb-0">{{ stats.total_bots }}</h3>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="bi bi-robot fs-1 text-info"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- لوحة تحكم المطور -->
+    <div class="row mt-4">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0"><i class="bi bi-speedometer2"></i> أدوات المطور</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <a href="{{ url_for('manage_codes') }}" class="btn btn-warning w-100 h-100">
+                                <div class="text-center py-4">
+                                    <i class="bi bi-key fs-1"></i>
+                                    <h5 class="mt-3">إدارة الكودات</h5>
+                                    <small>إنشاء وإدارة كودات التفعيل</small>
+                                </div>
+                            </a>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <a href="{{ url_for('manage_users') }}" class="btn btn-info w-100 h-100">
+                                <div class="text-center py-4">
+                                    <i class="bi bi-people fs-1"></i>
+                                    <h5 class="mt-3">المستخدمين</h5>
+                                    <small>عرض وإدارة جميع المستخدمين</small>
+                                </div>
+                            </a>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <a href="{{ url_for('view_logs') }}" class="btn btn-dark w-100 h-100">
+                                <div class="text-center py-4">
+                                    <i class="bi bi-list-check fs-1"></i>
+                                    <h5 class="mt-3">السجلات</h5>
+                                    <small>عرض سجلات النظام</small>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- آخر التفعيلات -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0">آخر التفعيلات</h5>
+                </div>
+                <div class="card-body">
+                    {% if recent_activations %}
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>المستخدم</th>
+                                    <th>الكود</th>
+                                    <th>التاريخ</th>
+                                    <th>ينتهي في</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for activation in recent_activations %}
+                                <tr>
+                                    <td>{{ activation.user.username }}</td>
+                                    <td><code>{{ activation.activation_code.code }}</code></td>
+                                    <td>{{ activation.activated_at.strftime('%Y-%m-%d') }}</td>
+                                    <td>
+                                        {{ activation.expires_at.strftime('%Y-%m-%d') }}
+                                        <br>
+                                        <small class="text-muted">
+                                            {{ (activation.expires_at - now).days }} يوم متبقي
+                                        </small>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p class="text-muted text-center">لا توجد تفعيلات حديثة</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- معلومات النظام -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="mb-0"><i class="bi bi-gear"></i> معلومات النظام</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>إصدار البانل:</span>
+                            <span class="badge bg-info">2.0</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>وقت التشغيل:</span>
+                            <span class="text-muted">24/7</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>وضع التشغيل:</span>
+                            <span class="text-success">🟢 نشط</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>آخر تحديث:</span>
+                            <span class="text-muted">{{ now.strftime('%Y-%m-%d %H:%M') }}</span>
+                        </li>
+                    </ul>
+                    
+                    <hr>
+                    
+                    <div class="alert alert-success">
+                        <h6><i class="bi bi-graph-up"></i> إحصائيات اليوم</h6>
+                        <div class="row text-center mt-3">
+                            <div class="col-6">
+                                <h4 class="text-primary">0</h4>
+                                <small>تسجيلات جديدة</small>
+                            </div>
+                            <div class="col-6">
+                                <h4 class="text-success">0</h4>
+                                <small>تفعيلات جديدة</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-warning">
+                        <h6><i class="bi bi-exclamation-triangle"></i> ملاحظات:</h6>
+                        <small>
+                            1. جميع الإجراءات مسجلة في السجلات<br>
+                            2. لا يمكن التراجع عن حذف المستخدمين<br>
+                            3. الكودات لا يمكن حذفها<br>
+                            4. النسخ الاحتياطي تلقائي يومياً
+                        </small>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- آخر الكودات -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0">آخر الكودات المنشأة</h5>
+                </div>
+                <div class="card-body">
+                    {% if recent_codes %}
+                    <div class="list-group">
+                        {% for code in recent_codes %}
+                        <div class="list-group-item">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <strong><code>{{ code.code }}</code></strong>
+                                    <br>
+                                    <small>{{ code.duration_days }} يوم | {{ code.max_users }} مستخدم</small>
+                                </div>
+                                <span class="badge {% if code.status == 'active' %}bg-success{% else %}bg-danger{% endif %}">
+                                    {{ code.status }}
+                                </span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-muted text-center">لا توجد كودات</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
