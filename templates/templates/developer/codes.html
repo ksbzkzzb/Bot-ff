@@ -1,0 +1,244 @@
+{% extends "base.html" %}
+
+{% block title %}إدارة الكودات - لوحة المطور{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="h3 mb-0"><i class="bi bi-key"></i> إدارة كودات التفعيل</h1>
+            <p class="text-muted">إنشاء وإدارة كودات التفعيل للمستخدمين</p>
+        </div>
+    </div>
+
+    <!-- إنشاء كود جديد -->
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="bi bi-plus-circle"></i> إنشاء كود جديد</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{{ url_for('manage_codes') }}">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="duration_days" class="form-label">المدة (أيام)</label>
+                                <select class="form-select" id="duration_days" name="duration_days" required>
+                                    <option value="1">1 يوم (تجريبي)</option>
+                                    <option value="7" selected>7 أيام</option>
+                                    <option value="30">30 يوم</option>
+                                    <option value="90">90 يوم</option>
+                                    <option value="180">180 يوم</option>
+                                    <option value="365">365 يوم</option>
+                                </select>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label for="max_users" class="form-label">الحد الأقصى للمستخدمين</label>
+                                <input type="number" class="form-control" id="max_users" 
+                                       name="max_users" value="1" min="1" max="100" required>
+                            </div>
+                            
+                            <div class="col-12">
+                                <label for="notes" class="form-label">ملاحظات (اختياري)</label>
+                                <textarea class="form-control" id="notes" name="notes" 
+                                          rows="2" placeholder="مثال: كود خاص لمجموعة VIP"></textarea>
+                            </div>
+                            
+                            <div class="col-12">
+                                <div class="d-grid">
+                                    <button type="submit" class="btn btn-success btn-lg">
+                                        <i class="bi bi-plus-circle"></i> إنشاء كود جديد
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <!-- معلومات سريعة -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="bi bi-info-circle"></i> معلومات الكودات</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-4">
+                            <h2 class="text-primary">{{ codes|length }}</h2>
+                            <small class="text-muted">إجمالي الكودات</small>
+                        </div>
+                        <div class="col-4">
+                            <h2 class="text-success">
+                                {{ codes|selectattr('status', 'equalto', 'active')|list|length }}
+                            </h2>
+                            <small class="text-muted">الكودات النشطة</small>
+                        </div>
+                        <div class="col-4">
+                            <h2 class="text-warning">
+                                {% set total_activations = 0 %}
+                                {% for code in codes %}
+                                    {% set total_activations = total_activations + code.activations|length %}
+                                {% endfor %}
+                                {{ total_activations }}
+                            </h2>
+                            <small class="text-muted">التفعيلات</small>
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="alert alert-warning">
+                        <h6><i class="bi bi-exclamation-triangle"></i> ملاحظات هامة:</h6>
+                        <small>
+                            1. الكود صالح لمدة سنة من تاريخ الإنشاء<br>
+                            2. يمكن للمستخدم تفعيل الكود مرة واحدة فقط<br>
+                            3. يمكن تعطيل الكود في أي وقت<br>
+                            4. الكودات لا يمكن حذفها لحفظ السجلات
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- قائمة الكودات -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">قائمة كودات التفعيل</h5>
+                </div>
+                <div class="card-body">
+                    {% if codes %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>الكود</th>
+                                    <th>المدة</th>
+                                    <th>المستخدمين</th>
+                                    <th>المنشئ</th>
+                                    <th>تاريخ الإنشاء</th>
+                                    <th>التفعيلات</th>
+                                    <th>الحالة</th>
+                                    <th>الإجراءات</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for code in codes %}
+                                <tr>
+                                    <td>
+                                        <code class="bg-light p-2 rounded">{{ code.code }}</code>
+                                        {% if code.notes %}
+                                        <br><small class="text-muted">{{ code.notes }}</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ code.duration_days }} يوم</td>
+                                    <td>
+                                        {{ code.activations|length }}/{{ code.max_users }}
+                                        <div class="progress" style="height: 5px;">
+                                            {% set usage_percent = (code.activations|length / code.max_users * 100)|int %}
+                                            <div class="progress-bar {% if usage_percent >= 100 %}bg-danger{% elif usage_percent >= 80 %}bg-warning{% else %}bg-success{% endif %}" 
+                                                 style="width: {{ usage_percent }}%"></div>
+                                        </div>
+                                    </td>
+                                    <td>{{ code.creator.username }}</td>
+                                    <td>{{ code.created_at.strftime('%Y-%m-%d') }}</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-info" type="button" 
+                                                data-bs-toggle="collapse" 
+                                                data-bs-target="#activations{{ code.id }}">
+                                            {{ code.activations|length }} تفعيل
+                                        </button>
+                                    </td>
+                                    <td>
+                                        {% if code.status == 'active' %}
+                                        <span class="badge bg-success">نشط</span>
+                                        {% else %}
+                                        <span class="badge bg-danger">معطل</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            {% if code.status == 'active' %}
+                                            <a href="{{ url_for('delete_code', code_id=code.id) }}" 
+                                               class="btn btn-outline-danger" 
+                                               onclick="return confirm('هل تريد تعطيل هذا الكود؟')">
+                                                <i class="bi bi-x-circle"></i>
+                                            </a>
+                                            {% endif %}
+                                            <button class="btn btn-outline-secondary" 
+                                                    onclick="copyToClipboard('{{ code.code }}')">
+                                                <i class="bi bi-copy"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <!-- تفعيلات الكود -->
+                                <tr class="collapse" id="activations{{ code.id }}">
+                                    <td colspan="8" class="bg-light">
+                                        <div class="p-3">
+                                            <h6>تفعيلات الكود:</h6>
+                                            {% if code.activations %}
+                                            <table class="table table-sm table-bordered">
+                                                <thead>
+                                                    <tr>
+                                                        <th>المستخدم</th>
+                                                        <th>تاريخ التفعيل</th>
+                                                        <th>تاريخ الانتهاء</th>
+                                                        <th>الحالة</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {% for activation in code.activations %}
+                                                    <tr>
+                                                        <td>{{ activation.user.username }}</td>
+                                                        <td>{{ activation.activated_at.strftime('%Y-%m-%d') }}</td>
+                                                        <td>{{ activation.expires_at.strftime('%Y-%m-%d') }}</td>
+                                                        <td>
+                                                            {% if activation.status == 'active' and activation.expires_at > now %}
+                                                            <span class="badge bg-success">نشط</span>
+                                                            {% elif activation.status == 'expired' %}
+                                                            <span class="badge bg-danger">منتهي</span>
+                                                            {% else %}
+                                                            <span class="badge bg-secondary">{{ activation.status }}</span>
+                                                            {% endif %}
+                                                        </td>
+                                                    </tr>
+                                                    {% endfor %}
+                                                </tbody>
+                                            </table>
+                                            {% else %}
+                                            <p class="text-muted text-center">لا توجد تفعيلات</p>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="bi bi-key fs-1 text-muted"></i>
+                        <h5 class="mt-3">لا توجد كودات</h5>
+                        <p class="text-muted">ابدأ بإنشاء أول كود تفعيل</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function copyToClipboard(text) {
+        navigator.clipboard.writeText(text).then(() => {
+            alert('تم نسخ الكود: ' + text);
+        });
+    }
+</script>
+{% endblock %}
