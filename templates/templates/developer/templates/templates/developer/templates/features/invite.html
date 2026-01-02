@@ -1,0 +1,290 @@
+{% extends "base.html" %}
+
+{% block title %}إرسال دعوات - FreeFire Panel{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="h3 mb-0"><i class="bi bi-envelope-plus"></i> إرسال دعوات</h1>
+            <p class="text-muted">إرسال دعوات للاعبين أو الغرف</p>
+        </div>
+    </div>
+
+    <!-- إرسال دعوة -->
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="bi bi-send"></i> إرسال دعوة</h5>
+                </div>
+                <div class="card-body">
+                    <form id="inviteForm">
+                        <div class="mb-3">
+                            <label for="playerId" class="form-label">معرف اللاعب</label>
+                            <input type="text" class="form-control" id="playerId" 
+                                   placeholder="أدخل Player ID" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="message" class="form-label">رسالة الدعوة (اختياري)</label>
+                            <textarea class="form-control" id="message" rows="3" 
+                                      placeholder="أدخل رسالة الدعوة..."></textarea>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="botSelect" class="form-label">اختر البوت المرسل</label>
+                            <select class="form-select" id="botSelect" multiple>
+                                <option value="all">جميع البوتات النشطة</option>
+                                <!-- سيتم ملء هذا من JavaScript -->
+                            </select>
+                            <div class="form-text">اضغط Ctrl لاختيار أكثر من بوت</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">عدد الدعوات</label>
+                            <input type="range" class="form-range" id="inviteCount" 
+                                   min="1" max="100" value="10">
+                            <div class="d-flex justify-content-between">
+                                <span>1</span>
+                                <span id="countValue">10</span>
+                                <span>100</span>
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-success btn-lg">
+                                <i class="bi bi-send"></i> إرسال الدعوة
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <!-- معلومات الدعوات -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="bi bi-info-circle"></i> معلومات الدعوات</h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <h6><i class="bi bi-exclamation-triangle"></i> ملاحظات هامة:</h6>
+                        <small>
+                            1. تجنب إرسال أكثر من 10 دعوات في الدقيقة<br>
+                            2. تأكد من صحة Player ID قبل الإرسال<br>
+                            3. استخدم رسائل دعوة مناسبة<br>
+                            4. المراقبة قد تؤدي إلى حظر البوتات
+                        </small>
+                    </div>
+                    
+                    <div class="row text-center mt-4">
+                        <div class="col-6">
+                            <div class="p-3 border rounded">
+                                <h2 class="text-primary" id="totalInvites">0</h2>
+                                <small class="text-muted">إجمالي الدعوات المرسلة</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="p-3 border rounded">
+                                <h2 class="text-success" id="successInvites">0</h2>
+                                <small class="text-muted">الدعوات الناجحة</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <h6>آخر الدعوات:</h6>
+                    <div id="recentInvites" class="mt-3">
+                        <div class="text-center text-muted py-3">
+                            <i class="bi bi-envelope fs-1"></i>
+                            <p class="mt-2">لا توجد دعوات مرسلة</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- سجل الدعوات -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-clock-history"></i> سجل الدعوات</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="inviteLogsTable">
+                            <thead>
+                                <tr>
+                                    <th>التاريخ</th>
+                                    <th>اللاعب</th>
+                                    <th>البوت المرسل</th>
+                                    <th>الحالة</th>
+                                    <th>الرسالة</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- سيتم ملؤه بواسطة JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // تحديث قيمة عدد الدعوات
+    document.getElementById('inviteCount').addEventListener('input', function() {
+        document.getElementById('countValue').textContent = this.value;
+    });
+    
+    // إرسال الدعوة
+    document.getElementById('inviteForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const playerId = document.getElementById('playerId').value;
+        const message = document.getElementById('message').value;
+        const inviteCount = document.getElementById('inviteCount').value;
+        const selectedBots = Array.from(document.getElementById('botSelect').selectedOptions)
+                                  .map(option => option.value);
+        
+        if (!playerId) {
+            alert('يرجى إدخال Player ID');
+            return;
+        }
+        
+        // إظهار تحميل
+        const submitBtn = this.querySelector('button[type="submit"]');
+        const originalText = submitBtn.innerHTML;
+        submitBtn.innerHTML = '<i class="bi bi-hourglass"></i> جاري الإرسال...';
+        submitBtn.disabled = true;
+        
+        fetch('/api/invite/send', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                player_id: playerId,
+                message: message,
+                count: inviteCount,
+                bots: selectedBots
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('تم إرسال الدعوة بنجاح!');
+                updateInviteStats();
+                addInviteToLog(playerId, message, data.timestamp);
+            } else {
+                alert('حدث خطأ: ' + data.message);
+            }
+        })
+        .catch(error => {
+            alert('حدث خطأ في الاتصال');
+            console.error(error);
+        })
+        .finally(() => {
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+        });
+    });
+    
+    // تحديث إحصائيات الدعوات
+    function updateInviteStats() {
+        // هنا يمكن جلب البيانات من الخادم
+        // مؤقتاً نزيد الأرقام يدوياً
+        const totalEl = document.getElementById('totalInvites');
+        const successEl = document.getElementById('successInvites');
+        
+        totalEl.textContent = parseInt(totalEl.textContent) + 1;
+        successEl.textContent = parseInt(successEl.textContent) + 1;
+    }
+    
+    // إضافة دعوة للسجل
+    function addInviteToLog(playerId, message, timestamp) {
+        const tableBody = document.querySelector('#inviteLogsTable tbody');
+        const newRow = document.createElement('tr');
+        
+        const now = new Date();
+        const timeString = now.toLocaleTimeString('ar-SA');
+        const dateString = now.toLocaleDateString('ar-SA');
+        
+        newRow.innerHTML = `
+            <td>${dateString} ${timeString}</td>
+            <td><code>${playerId}</code></td>
+            <td><span class="badge bg-info">Bot-1</span></td>
+            <td><span class="badge bg-success">✅ تم الإرسال</span></td>
+            <td>${message || 'بدون رسالة'}</td>
+        `;
+        
+        tableBody.insertBefore(newRow, tableBody.firstChild);
+        
+        // تحديث آخر الدعوات
+        updateRecentInvites(playerId, timestamp);
+    }
+    
+    // تحديث آخر الدعوات
+    function updateRecentInvites(playerId, timestamp) {
+        const recentDiv = document.getElementById('recentInvites');
+        
+        const inviteItem = document.createElement('div');
+        inviteItem.className = 'alert alert-light border mb-2';
+        
+        const now = new Date();
+        const timeAgo = Math.floor((now - new Date(timestamp)) / 1000 / 60); // بالدقائق
+        
+        inviteItem.innerHTML = `
+            <div class="d-flex justify-content-between">
+                <div>
+                    <strong>Player ID:</strong> ${playerId}
+                    <br>
+                    <small class="text-muted">منذ ${timeAgo} دقيقة</small>
+                </div>
+                <span class="badge bg-success">مرسلة</span>
+            </div>
+        `;
+        
+        recentDiv.insertBefore(inviteItem, recentDiv.firstChild);
+        
+        // الحد من عدد العناصر المعروضة
+        if (recentDiv.children.length > 5) {
+            recentDiv.removeChild(recentDiv.lastChild);
+        }
+    }
+    
+    // جلب البوتات المتاحة
+    function loadBots() {
+        // هنا يمكن جلب قائمة البوتات من الخادم
+        // مؤقتاً نضيف خيارات وهمية
+        const botSelect = document.getElementById('botSelect');
+        const bots = ['Bot-1 (123456)', 'Bot-2 (789012)', 'Bot-3 (345678)'];
+        
+        bots.forEach((bot, index) => {
+            const option = document.createElement('option');
+            option.value = `bot${index + 1}`;
+            option.textContent = bot;
+            botSelect.appendChild(option);
+        });
+    }
+    
+    // تحميل البيانات عند فتح الصفحة
+    document.addEventListener('DOMContentLoaded', function() {
+        loadBots();
+        
+        // جلب سجل الدعوات
+        fetchInviteLogs();
+    });
+    
+    // جلب سجل الدعوات من الخادم
+    function fetchInviteLogs() {
+        // هنا يمكن جلب البيانات من الخادم
+        // مؤقتاً نتركه فارغاً
+    }
+</script>
+{% endblock %}
