@@ -1,0 +1,410 @@
+{% extends "base.html" %}
+
+{% block title %}إدارة البوتات - FreeFire Panel{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-0"><i class="bi bi-robot"></i> إدارة البوتات</h1>
+                    <p class="text-muted">إضافة وتشغيل وإيقاف البوتات</p>
+                </div>
+                <a href="{{ url_for('add_bot') }}" class="btn btn-primary">
+                    <i class="bi bi-plus-circle"></i> إضافة بوت جديد
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- إحصائيات البوتات -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card border-start border-primary border-4">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col">
+                            <h6 class="text-muted">البوتات النشطة</h6>
+                            <h3 class="mb-0">
+                                {{ bots|selectattr('status', 'equalto', 'active')|list|length }}
+                            </h3>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-play-circle fs-1 text-primary"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card border-start border-success border-4">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col">
+                            <h6 class="text-muted">إجمالي البوتات</h6>
+                            <h3 class="mb-0">{{ bots|length }}</h3>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-collection fs-1 text-success"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card border-start border-warning border-4">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col">
+                            <h6 class="text-muted">البوتات المتوقفة</h6>
+                            <h3 class="mb-0">
+                                {{ bots|selectattr('status', 'equalto', 'inactive')|list|length }}
+                            </h3>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-stop-circle fs-1 text-warning"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card border-start border-danger border-4">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col">
+                            <h6 class="text-muted">البوتات المحظورة</h6>
+                            <h3 class="mb-0">
+                                {{ bots|selectattr('status', 'equalto', 'banned')|list|length }}
+                            </h3>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-slash-circle fs-1 text-danger"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- أدوات التحكم -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">أدوات التحكم</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-2">
+                            <button class="btn btn-success w-100" onclick="startSelectedBots()">
+                                <i class="bi bi-play"></i> تشغيل
+                            </button>
+                        </div>
+                        <div class="col-md-2">
+                            <button class="btn btn-danger w-100" onclick="stopSelectedBots()">
+                                <i class="bi bi-stop"></i> إيقاف
+                            </button>
+                        </div>
+                        <div class="col-md-2">
+                            <button class="btn btn-warning w-100" onclick="restartSelectedBots()">
+                                <i class="bi bi-arrow-clockwise"></i> إعادة تشغيل
+                            </button>
+                        </div>
+                        <div class="col-md-2">
+                            <button class="btn btn-info w-100" onclick="checkStatusSelectedBots()">
+                                <i class="bi bi-info-circle"></i> فحص الحالة
+                            </button>
+                        </div>
+                        <div class="col-md-2">
+                            <button class="btn btn-outline-danger w-100" onclick="deleteSelectedBots()">
+                                <i class="bi bi-trash"></i> حذف
+                            </button>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="form-check mt-2">
+                                <input class="form-check-input" type="checkbox" id="selectAll">
+                                <label class="form-check-label" for="selectAll">
+                                    تحديد الكل
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- قائمة البوتات -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    {% if bots %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th width="50">
+                                        <input type="checkbox" id="selectAllRows">
+                                    </th>
+                                    <th>الاسم</th>
+                                    <th>UID</th>
+                                    <th>الحالة</th>
+                                    <th>تاريخ الإضافة</th>
+                                    <th>آخر نشاط</th>
+                                    <th>الإجراءات</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for bot in bots %}
+                                <tr>
+                                    <td>
+                                        <input type="checkbox" class="bot-checkbox" value="{{ bot.id }}">
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="avatar me-3">
+                                                <i class="bi bi-robot fs-4 text-primary"></i>
+                                            </div>
+                                            <div>
+                                                <strong>{{ bot.nickname or 'بدون اسم' }}</strong>
+                                                <br>
+                                                <small class="text-muted">ID: {{ bot.id }}</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <code>{{ bot.uid }}</code>
+                                        <button class="btn btn-sm btn-outline-secondary ms-2" 
+                                                onclick="copyToClipboard('{{ bot.uid }}')">
+                                            <i class="bi bi-copy"></i>
+                                        </button>
+                                    </td>
+                                    <td>
+                                        {% if bot.status == 'active' %}
+                                        <span class="badge bg-success">🟢 نشط</span>
+                                        {% elif bot.status == 'inactive' %}
+                                        <span class="badge bg-warning">🟡 متوقف</span>
+                                        {% elif bot.status == 'banned' %}
+                                        <span class="badge bg-danger">🔴 محظور</span>
+                                        {% elif bot.status == 'error' %}
+                                        <span class="badge bg-danger">⚠️ خطأ</span>
+                                        {% else %}
+                                        <span class="badge bg-secondary">{{ bot.status }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ bot.created_at.strftime('%Y-%m-%d') }}</td>
+                                    <td>
+                                        {% if bot.last_activity %}
+                                        {{ bot.last_activity.strftime('%H:%M') }}
+                                        <br>
+                                        <small>{{ bot.last_activity.strftime('%Y-%m-%d') }}</small>
+                                        {% else %}
+                                        <span class="text-muted">لا يوجد</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            {% if bot.status == 'active' %}
+                                            <button class="btn btn-outline-danger" 
+                                                    onclick="stopBot({{ bot.id }})">
+                                                <i class="bi bi-stop"></i>
+                                            </button>
+                                            {% else %}
+                                            <button class="btn btn-outline-success" 
+                                                    onclick="startBot({{ bot.id }})">
+                                                <i class="bi bi-play"></i>
+                                            </button>
+                                            {% endif %}
+                                            
+                                            <a href="#" class="btn btn-outline-info"
+                                               data-bs-toggle="modal" 
+                                               data-bs-target="#botInfoModal{{ bot.id }}">
+                                                <i class="bi bi-info-circle"></i>
+                                            </a>
+                                            
+                                            <a href="{{ url_for('delete_bot', bot_id=bot.id) }}" 
+                                               class="btn btn-outline-danger"
+                                               onclick="return confirm('هل تريد حذف هذا البوت؟')">
+                                                <i class="bi bi-trash"></i>
+                                            </a>
+                                        </div>
+                                        
+                                        <!-- Modal for bot info -->
+                                        <div class="modal fade" id="botInfoModal{{ bot.id }}" tabindex="-1">
+                                            <div class="modal-dialog">
+                                                <div class="modal-content">
+                                                    <div class="modal-header">
+                                                        <h5 class="modal-title">معلومات البوت</h5>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                    </div>
+                                                    <div class="modal-body">
+                                                        <div class="row">
+                                                            <div class="col-6">
+                                                                <strong>المعرف:</strong>
+                                                                <p>{{ bot.id }}</p>
+                                                            </div>
+                                                            <div class="col-6">
+                                                                <strong>الاسم:</strong>
+                                                                <p>{{ bot.nickname or 'بدون اسم' }}</p>
+                                                            </div>
+                                                            <div class="col-12">
+                                                                <strong>UID:</strong>
+                                                                <p><code>{{ bot.uid }}</code></p>
+                                                            </div>
+                                                            <div class="col-6">
+                                                                <strong>الحالة:</strong>
+                                                                <p>
+                                                                    {% if bot.status == 'active' %}
+                                                                    <span class="badge bg-success">نشط</span>
+                                                                    {% else %}
+                                                                    <span class="badge bg-warning">متوقف</span>
+                                                                    {% endif %}
+                                                                </p>
+                                                            </div>
+                                                            <div class="col-6">
+                                                                <strong>تاريخ الإضافة:</strong>
+                                                                <p>{{ bot.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إغلاق</button>
+                                                        <button type="button" class="btn btn-primary">تعديل</button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="bi bi-robot fs-1 text-muted"></i>
+                        <h4 class="mt-3">لا توجد بوتات</h4>
+                        <p class="text-muted">ابدأ بإضافة أول بوت لديك</p>
+                        <a href="{{ url_for('add_bot') }}" class="btn btn-primary mt-2">
+                            <i class="bi bi-plus-circle"></i> إضافة بوت جديد
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // تحديد/إلغاء تحديد الكل
+    document.getElementById('selectAll').addEventListener('change', function() {
+        const checkboxes = document.querySelectorAll('.bot-checkbox');
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = this.checked;
+        });
+    });
+    
+    document.getElementById('selectAllRows').addEventListener('change', function() {
+        const checkboxes = document.querySelectorAll('.bot-checkbox');
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = this.checked;
+        });
+    });
+    
+    // الحصول على البوتات المحددة
+    function getSelectedBots() {
+        const checkboxes = document.querySelectorAll('.bot-checkbox:checked');
+        const selectedIds = Array.from(checkboxes).map(cb => cb.value);
+        return selectedIds;
+    }
+    
+    // تشغيل البوتات المحددة
+    function startSelectedBots() {
+        const selectedIds = getSelectedBots();
+        if (selectedIds.length === 0) {
+            alert('يرجى تحديد بوت على الأقل');
+            return;
+        }
+        
+        fetch('/api/bots/start', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({bot_ids: selectedIds})
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert('حدث خطأ: ' + data.message);
+            }
+        });
+    }
+    
+    // إيقاف البوتات المحددة
+    function stopSelectedBots() {
+        const selectedIds = getSelectedBots();
+        if (selectedIds.length === 0) {
+            alert('يرجى تحديد بوت على الأقل');
+            return;
+        }
+        
+        fetch('/api/bots/stop', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({bot_ids: selectedIds})
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert('حدث خطأ: ' + data.message);
+            }
+        });
+    }
+    
+    // تشغيل بوت واحد
+    function startBot(botId) {
+        fetch('/api/bots/start', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({bot_ids: [botId]})
+        })
+        .then(response => response.json())
+        .then(data => {
+            alert(data.message);
+            location.reload();
+        });
+    }
+    
+    // إيقاف بوت واحد
+    function stopBot(botId) {
+        fetch('/api/bots/stop', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({bot_ids: [botId]})
+        })
+        .then(response => response.json())
+        .then(data => {
+            alert(data.message);
+            location.reload();
+        });
+    }
+    
+    function copyToClipboard(text) {
+        navigator.clipboard.writeText(text).then(() => {
+            alert('تم نسخ: ' + text);
+        });
+    }
+</script>
+{% endblock %}
