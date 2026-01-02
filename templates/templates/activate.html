@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+
+{% block title %}تفعيل الاشتراك - FreeFire Panel{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0"><i class="bi bi-key"></i> تفعيل الاشتراك</h5>
+                </div>
+                <div class="card-body">
+                    <!-- حالة الاشتراك الحالي -->
+                    {% set current_activation = current_user.activations|selectattr('status', 'equalto', 'active')|first %}
+                    {% if current_activation and current_activation.expires_at > now %}
+                    <div class="alert alert-success">
+                        <h5><i class="bi bi-check-circle"></i> اشتراكك مفعل</h5>
+                        <p>
+                            <strong>الكود:</strong> {{ current_activation.activation_code.code }}<br>
+                            <strong>المدة:</strong> {{ current_activation.activation_code.duration_days }} يوم<br>
+                            <strong>ينتهي في:</strong> {{ current_activation.expires_at.strftime('%Y-%m-%d %H:%M') }}<br>
+                            <strong>الأيام المتبقية:</strong> {{ (current_activation.expires_at - now).days }} يوم
+                        </p>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-danger">
+                        <h5><i class="bi bi-exclamation-triangle"></i> اشتراكك غير مفعل</h5>
+                        <p>يجب تفعيل اشتراكك لاستخدام جميع الميزات.</p>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- نموذج التفعيل -->
+                    <div class="card mt-4">
+                        <div class="card-header">
+                            <h6 class="mb-0">تفعيل اشتراك جديد</h6>
+                        </div>
+                        <div class="card-body">
+                            <form method="POST" action="{{ url_for('activate_account') }}">
+                                <div class="mb-3">
+                                    <label for="code" class="form-label">كود التفعيل</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="bi bi-ticket"></i></span>
+                                        <input type="text" class="form-control" id="code" name="code" 
+                                               placeholder="أدخل كود التفعيل (مثل: FF-XXXXXXXX)" required>
+                                    </div>
+                                    <div class="form-text">
+                                        احصل على كود التفعيل من المطور الخاص بك
+                                    </div>
+                                </div>
+                                
+                                <div class="d-grid gap-2">
+                                    <button type="submit" class="btn btn-success btn-lg">
+                                        <i class="bi bi-shield-check"></i> تفعيل الآن
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                    
+                    <!-- معلومات الكودات -->
+                    <div class="card mt-4">
+                        <div class="card-header">
+                            <h6 class="mb-0"><i class="bi bi-info-circle"></i> معلومات الكودات</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="text-center p-3 border rounded">
+                                        <h3 class="text-primary">7 أيام</h3>
+                                        <p class="text-muted">كود تجريبي</p>
+                                        <small>للمستخدمين الجدد</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="text-center p-3 border rounded">
+                                        <h3 class="text-success">30 يوم</h3>
+                                        <p class="text-muted">كود شهري</p>
+                                        <small>الأكثر انتشاراً</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="text-center p-3 border rounded">
+                                        <h3 class="text-warning">90 يوم</h3>
+                                        <p class="text-muted">كود متميز</p>
+                                        <small>لمستخدمي VIP</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- تاريخ التفعيلات -->
+                    <div class="card mt-4">
+                        <div class="card-header">
+                            <h6 class="mb-0"><i class="bi bi-clock-history"></i> تاريخ التفعيلات</h6>
+                        </div>
+                        <div class="card-body">
+                            {% if current_user.activations %}
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>الكود</th>
+                                            <th>تاريخ التفعيل</th>
+                                            <th>تاريخ الانتهاء</th>
+                                            <th>المدة</th>
+                                            <th>الحالة</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for activation in current_user.activations|sort(attribute='activated_at', reverse=true) %}
+                                        <tr>
+                                            <td>{{ activation.activation_code.code }}</td>
+                                            <td>{{ activation.activated_at.strftime('%Y-%m-%d') }}</td>
+                                            <td>{{ activation.expires_at.strftime('%Y-%m-%d') }}</td>
+                                            <td>{{ activation.activation_code.duration_days }} يوم</td>
+                                            <td>
+                                                {% if activation.status == 'active' and activation.expires_at > now %}
+                                                <span class="badge bg-success">نشط</span>
+                                                {% elif activation.status == 'expired' %}
+                                                <span class="badge bg-danger">منتهي</span>
+                                                {% else %}
+                                                <span class="badge bg-secondary">{{ activation.status }}</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% else %}
+                            <p class="text-muted text-center">لا توجد تفعيلات سابقة</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
