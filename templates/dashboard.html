@@ -1,0 +1,249 @@
+{% extends "base.html" %}
+
+{% block title %}لوحة التحكم - FreeFire Panel{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="h3 mb-0">لوحة التحكم</h1>
+            <p class="text-muted">مرحباً {{ current_user.username }}! آخر دخول: {{ current_user.last_login.strftime('%Y-%m-%d %H:%M') if current_user.last_login else 'أول دخول' }}</p>
+        </div>
+    </div>
+
+    <!-- بطاقات الإحصائيات -->
+    <div class="row">
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="text-muted">البوتات النشطة</h6>
+                            <h3 class="mb-0">{{ stats.active_bots }}</h3>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="bi bi-robot fs-1 text-primary"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="text-muted">إجمالي البوتات</h6>
+                            <h3 class="mb-0">{{ stats.total_bots }}</h3>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="bi bi-collection fs-1 text-success"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="text-muted">حالة الاشتراك</h6>
+                            {% if stats.active_until %}
+                                <h5 class="mb-0 text-success">✅ مفعل</h5>
+                                <small class="text-muted">ينتهي: {{ stats.active_until.strftime('%Y-%m-%d') }}</small>
+                            {% else %}
+                                <h5 class="mb-0 text-danger">❌ غير مفعل</h5>
+                            {% endif %}
+                        </div>
+                        <div class="align-self-center">
+                            <i class="bi bi-shield-check fs-1 {% if stats.active_until %}text-success{% else %}text-danger{% endif %}"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="text-muted">الكودات المستخدمة</h6>
+                            <h3 class="mb-0">{{ stats.total_codes }}</h3>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="bi bi-key fs-1 text-warning"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- الإجراءات السريعة -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">إجراءات سريعة</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-2 col-6">
+                            <a href="{{ url_for('add_bot') }}" class="btn btn-primary w-100">
+                                <i class="bi bi-plus-circle"></i> إضافة بوت
+                            </a>
+                        </div>
+                        <div class="col-md-2 col-6">
+                            <a href="{{ url_for('invite_feature') }}" class="btn btn-success w-100">
+                                <i class="bi bi-envelope-plus"></i> إرسال دعوة
+                            </a>
+                        </div>
+                        <div class="col-md-2 col-6">
+                            <a href="{{ url_for('join_feature') }}" class="btn btn-info w-100">
+                                <i class="bi bi-door-open"></i> انضمام لغرفة
+                            </a>
+                        </div>
+                        <div class="col-md-2 col-6">
+                            <a href="{{ url_for('activate_account') }}" class="btn btn-warning w-100">
+                                <i class="bi bi-key"></i> تفعيل اشتراك
+                            </a>
+                        </div>
+                        <div class="col-md-2 col-6">
+                            <a href="{{ url_for('messages_feature') }}" class="btn btn-secondary w-100">
+                                <i class="bi bi-chat-dots"></i> إرسال رسالة
+                            </a>
+                        </div>
+                        <div class="col-md-2 col-6">
+                            <a href="{{ url_for('squad_feature') }}" class="btn btn-danger w-100">
+                                <i class="bi bi-people"></i> إنشاء فريق
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- آخر النشاطات -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">آخر النشاطات</h5>
+                </div>
+                <div class="card-body">
+                    {% if recent_logs %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>الوقت</th>
+                                    <th>الإجراء</th>
+                                    <th>التفاصيل</th>
+                                    <th>IP</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for log in recent_logs %}
+                                <tr>
+                                    <td>{{ log.timestamp.strftime('%Y-%m-%d %H:%M') }}</td>
+                                    <td>{{ log.action }}</td>
+                                    <td>{{ log.details|truncate(50) }}</td>
+                                    <td><code>{{ log.ip_address }}</code></td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p class="text-muted text-center">لا توجد نشاطات سابقة</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- معلومات النظام -->
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">معلومات النظام</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>الإصدار:</span>
+                            <span class="text-muted">2.0</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>الوقت الحالي:</span>
+                            <span class="text-muted current-time"></span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>حالة الخادم:</span>
+                            <span class="badge bg-success">🟢 نشط</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>الوضع:</span>
+                            <span class="text-muted">
+                                {% if current_user.is_developer %}
+                                    <span class="badge bg-warning">مطور</span>
+                                {% else %}
+                                    <span class="badge bg-info">مستخدم</span>
+                                {% endif %}
+                            </span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">دليل سريع</h5>
+                </div>
+                <div class="card-body">
+                    <div class="accordion" id="quickGuide">
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#guide1">
+                                    كيفية إضافة بوت؟
+                                </button>
+                            </h2>
+                            <div id="guide1" class="accordion-collapse collapse show" data-bs-parent="#quickGuide">
+                                <div class="accordion-body">
+                                    1. انتقل إلى "إدارة البوتات"<br>
+                                    2. اضغط على "إضافة بوت جديد"<br>
+                                    3. أدخل UID و Password<br>
+                                    4. احفظ واضغط على "تشغيل"
+                                </div>
+                            </div>
+                        </div>
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#guide2">
+                                    كيفية تفعيل الاشتراك؟
+                                </button>
+                            </h2>
+                            <div id="guide2" class="accordion-collapse collapse" data-bs-parent="#quickGuide">
+                                <div class="accordion-body">
+                                    1. احصل على كود تفعيل من المطور<br>
+                                    2. انتقل إلى صفحة "التفعيل"<br>
+                                    3. أدخل الكود واضغط تفعيل<br>
+                                    4. صلاحيتك ستنتهي بعد المدة المحددة
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
